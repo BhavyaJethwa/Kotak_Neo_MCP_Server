@@ -1,0 +1,8 @@
+langchain
+langgraph
+streamlit
+requests
+fastapi
+uvicorn==0.15.0
+git+https://github.com/Kotak-Neo/Kotak-neo-api-v2.git@v2.0.0#egg=neo_api_client
+redis
