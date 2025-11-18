@@ -8,3 +8,4 @@ redis
 langchain-mcp-adapters
 fastmcp
 langchain-openai
+httpx
