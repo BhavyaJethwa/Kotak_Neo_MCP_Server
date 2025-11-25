@@ -8,23 +8,6 @@ import uuid
 
 EIGHTEEN_HOURS_IN_SECONDS = 18 * 60 * 60
 
-# async def get_redis():
-#     redis_client = None
-#     try:
-#         redis_client = aioredis.Redis(
-#             host='redis', 
-#             port=6379, 
-#             db=0, 
-#             decode_responses=True
-#         )
-#         await redis_client.ping()
-#         print("Connected to Redis successfully!")
-#     except Exception as e: 
-#         print(f"Could not connect to Redis: {e}")
-#         redis_client = None
-#     finally:
-#         return redis_client
-         
 redis_connection = None
 
 def create_redis_client():
@@ -127,6 +110,137 @@ async def get_holdings_data(session_id: str):
         # Log the error in the worker service's logs
         print(f"Exception when calling holdings: {e}")
         raise HTTPException(status_code=500, detail=f"Error fetching holdings from Koatk Neo: {e}")
+    
+@app.get("/worker/limits/{session_id}")
+async def get_limits_data(session_id: str):
+    """Fetches limits using Koatk Neo library (websockets==8.0)."""
+    try:
+        client = await get_current_client(session_id)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Cannot get client: {e}")
+    
+    try:
+        limits = client.limits()
+        return {"session_id": session_id, "message": "Holdings fetched", "limits": limits}
+    except Exception as e:
+        # Log the error in the worker service's logs
+        print(f"Exception when calling limits: {e}")
+        raise HTTPException(status_code=500, detail=f"Error fetching limits from Koatk Neo: {e}")
+    
+@app.get("/worker/positions/{session_id}")
+async def get_positions_data(session_id: str):
+    """Fetches positions using Koatk Neo library (websockets==8.0)."""
+    try:
+        client = await get_current_client(session_id)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Cannot get client: {e}")
+    
+    try:
+        positions = client.positions()
+        return {"session_id": session_id, "message": "Holdings fetched", "positions": positions}
+    except Exception as e:
+        # Log the error in the worker service's logs
+        print(f"Exception when calling positions: {e}")
+        raise HTTPException(status_code=500, detail=f"Error fetching positions from Koatk Neo: {e}")
+    
+from pydantic import BaseModel
+
+class BuyOrderRequest(BaseModel):
+    qty: int
+    stock: str
+    
+@app.post("/worker/buy/{session_id}")
+async def buy_order(session_id:str, order_data: BuyOrderRequest):
+    """ Place order to BUY stock for client """
+    try:
+        qty = order_data.qty
+        qty = str(qty)
+        stock = order_data.stock
+        client = await get_current_client(session_id)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Cannot get client: {e}")
+    try:
+        response = client.place_order(
+        exchange_segment="nse_cm",
+        product="CNC",
+        price="0",
+        order_type="MKT",
+        quantity=qty,
+        validity="DAY",
+        trading_symbol= stock + "-EQ",
+        transaction_type="B",
+        amo="YES",
+        disclosed_quantity="0",
+        market_protection="0",
+        pf="N",
+        trigger_price="0",
+        tag=None,
+        scrip_token=None,
+        square_off_type=None,
+        stop_loss_type=None,
+        stop_loss_value=None,
+        square_off_value=None,
+        last_traded_price=None,
+        trailing_stop_loss=None,
+        trailing_sl_value=None,
+    )   
+        print(response)
+        return response
+    except Exception as e:
+        print("Exception when calling OrderApi->place_order: %s\n" % e)
+    
+class SellOrderRequest(BaseModel):
+    qty: int
+    stock: str
+    
+@app.post("/worker/sell/{session_id}")
+async def sell_order(session_id:str, order_data: SellOrderRequest):
+    """ Place order to SELL stock for client """
+    try:
+        qty = order_data.qty
+        qty = str(qty)
+        stock = order_data.stock
+        client = await get_current_client(session_id)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Cannot get client: {e}")
+    try:
+        response = client.place_order(
+        exchange_segment="nse_cm",
+        product="CNC",
+        price="0",
+        order_type="MKT",
+        quantity=qty,
+        validity="DAY",
+        trading_symbol= stock + "-EQ",
+        transaction_type="S",
+        amo="YES",
+        disclosed_quantity="0",
+        market_protection="0",
+        pf="N",
+        trigger_price="0",
+        tag=None,
+        scrip_token=None,
+        square_off_type=None,
+        stop_loss_type=None,
+        stop_loss_value=None,
+        square_off_value=None,
+        last_traded_price=None,
+        trailing_stop_loss=None,
+        trailing_sl_value=None,
+    )   
+        print(response)
+        return response
+    except Exception as e:
+        print("Exception when calling OrderApi->place_order: %s\n" % e)
+
 
 @app.post("/worker/validate/")    
 async def validate(req: ValidateRequest):

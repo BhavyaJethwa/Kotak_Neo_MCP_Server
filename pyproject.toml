@@ -1,0 +1,11 @@
+[project]
+name = "kotak-neo-mcp"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.121.3",
+    "httpx>=0.28.1",
+    "mcp[cli]>=1.22.0",
+]

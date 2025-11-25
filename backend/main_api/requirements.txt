@@ -1,11 +1,10 @@
 langchain
 langgraph
-streamlit
+langchain-mcp-adapters
+langchain-openai
 requests
 fastapi
 uvicorn
-redis
-langchain-mcp-adapters
 fastmcp
-langchain-openai
+mcp
 httpx
